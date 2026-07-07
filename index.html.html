@@ -1,678 +1,665 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แบบจำลองการเคลื่อนไหวศีรษะและขากรรไกร 3D</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Post-Op Cardiac Rehab Simulation</title>
     <style>
-        body { font-family: 'Noto Sans Thai', sans-serif; }
-        canvas {
-            touch-action: none;
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: #ffffff;
+            --text-dark: #334155;
+            --text-light: #64748b;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #e2e8f0;
+            --radius: 12px;
         }
-        .slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4F46E5;
-            cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .slider-thumb::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #4F46E5;
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: var(--panel-bg);
+            width: 100%;
+            max-width: 1000px;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Status Panel */
+        .status-panel {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .avatar-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            font-size: 5rem;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        .day-indicator {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .actions-left {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--warning);
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .stat-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .stat-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+
+        /* Action Panel */
+        .interaction-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            border: 2px solid white;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+
+        .btn-danger {
+            border-color: #fca5a5;
+            color: var(--danger);
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #fef2f2;
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .btn-next {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+        
+        .btn-next.pulse {
+            animation: pulse 1.5s infinite;
+            background: var(--success);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Log Panel */
+        .log-panel {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: var(--radius);
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 5px;
+        }
+
+        .log-entry.warning { color: #fcd34d; }
+        .log-entry.danger { color: #fca5a5; }
+        .log-entry.success { color: #6ee7b7; }
+
+        /* Modal Overlay */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--panel-bg);
+            padding: 40px;
+            border-radius: var(--radius);
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-restart {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body>
 
-    <div class="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
-        
-        <header class="mb-6 text-center md:text-left">
-            <h1 class="text-3xl font-bold text-indigo-900 mb-2">การเคลื่อนไหวที่สัมพันธ์กันระหว่างศีรษะและขากรรไกร</h1>
-            <p class="text-slate-600">เรียนรู้จุดเกาะและหน้าที่ของกล้ามเนื้อต่างๆ ผ่านโมเดลกะโหลกศีรษะ 3D</p>
+    <div class="game-container">
+        <header class="header">
+            <h1>❤️ Post-Op Cardiac Rehab</h1>
+            <p>Target: Reach 5 METs by Day 6. Manage O2, Pain, and RPE.</p>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Area 1: Canvas Visualization -->
-            <div class="col-span-1 lg:col-span-2 bg-white rounded-3xl shadow-xl p-4 border border-slate-100 flex flex-col items-center justify-center overflow-hidden relative">
-                <!-- แสงเงาพื้นหลังกรอบ -->
-                <div class="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-200 opacity-50 z-0"></div>
-                <canvas id="anatomyCanvas" width="600" height="550" class="max-w-full h-auto z-10"></canvas>
+        <div class="main-content">
+            <!-- Status Panel -->
+            <div class="status-panel">
+                <div class="day-indicator" id="day-display">Day 1</div>
+                <div class="actions-left" id="actions-display">Actions Left: 3</div>
+                
+                <div class="avatar-container">
+                    <div class="avatar" id="avatar">😃</div>
+                </div>
+
+                <!-- METs -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>METs (Fitness)</span>
+                        <span id="mets-val">1.0 / 5.0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mets-bar" style="width: 20%; background: var(--success);"></div>
+                    </div>
+                </div>
+
+                <!-- O2 Saturation -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>O2 Saturation</span>
+                        <span id="o2-val">98%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="o2-bar" style="width: 100%; background: var(--primary);"></div>
+                    </div>
+                </div>
+
+                <!-- Pain -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>Pain Scale</span>
+                        <span id="pain-val">0 / 10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="pain-bar" style="width: 0%; background: var(--danger);"></div>
+                    </div>
+                </div>
+
+                <!-- RPE -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>RPE Scale</span>
+                        <span id="rpe-val">0 / 10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="rpe-bar" style="width: 0%; background: var(--warning);"></div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Area 2: Controls & Muscles List -->
-            <div class="col-span-1 flex flex-col gap-6">
-                
-                <!-- Sliders -->
-                <div class="bg-white rounded-3xl shadow-lg p-6 border border-slate-100 relative overflow-hidden">
-                    <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2 relative z-10">
-                        <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-                        ควบคุมการเคลื่อนไหว
-                    </h2>
-                    
-                    <div class="mb-6 relative z-10">
-                        <div class="flex justify-between mb-2">
-                            <label class="font-semibold text-slate-700">การยื่นคอ (Forward Neck)</label>
-                            <span id="neckValue" class="text-indigo-600 font-bold">0°</span>
-                        </div>
-                        <input type="range" id="neckSlider" min="-10" max="30" value="0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb" style="background: #10B981;">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span>ดึงคอกลับ</span>
-                            <span>ยื่นคอสุด</span>
-                        </div>
-                    </div>
-
-                    <div class="mb-6 relative z-10">
-                        <div class="flex justify-between mb-2">
-                            <label class="font-semibold text-slate-700">การก้ม/เงย ศีรษะ (Head Pitch)</label>
-                            <span id="headValue" class="text-indigo-600 font-bold">0°</span>
-                        </div>
-                        <input type="range" id="headSlider" min="-30" max="30" value="0" class="w-full h-3 bg-gradient-to-r from-indigo-200 via-slate-200 to-rose-200 rounded-lg appearance-none cursor-pointer slider-thumb">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span>เงย (Extension)</span>
-                            <span>ก้ม (Flexion)</span>
-                        </div>
-                    </div>
-
-                    <div class="relative z-10">
-                        <div class="flex justify-between mb-2">
-                            <label class="font-semibold text-slate-700">การอ้าปาก (Jaw Opening)</label>
-                            <span id="jawValue" class="text-indigo-600 font-bold">0°</span>
-                        </div>
-                        <input type="range" id="jawSlider" min="0" max="25" value="0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
-                        <div class="flex justify-between text-xs text-slate-400 mt-1">
-                            <span>หุบปาก</span>
-                            <span>อ้าปากสุด (25°)</span>
-                        </div>
-                        <div id="tensionAlert" class="text-xs text-rose-600 mt-4 font-semibold hidden bg-rose-50 p-3 rounded-xl border border-rose-200 shadow-sm transition-all duration-300">
-                            * การเงยศีรษะมากเกินไป: Trapezius หดตัวดึง Pterygoid ทำให้กรามถูกดึงให้อ้าออกอัตโนมัติ และเกิดแรงกดทับที่ข้อต่อกราม (TMJ)
-                        </div>
-                    </div>
+            <!-- Action Panel & Logs -->
+            <div class="interaction-area">
+                <div class="action-grid" id="action-grid">
+                    <button class="btn" onclick="executeAction('breathing')"><span>🫁</span> Diaphragmatic Breathing Exercise</button>
+                    <button class="btn" onclick="executeAction('coughing')"><span>🫂</span> Cough w/ Support</button>
+                    <button class="btn" onclick="executeAction('autogenic')"><span>🌬️</span> Autogenic Drainage</button>
+                    <button class="btn" onclick="executeAction('plb')"><span>😮‍💨</span> Pursed Lip Breathing</button>
+                    <button class="btn" onclick="executeAction('activeMovement')"><span>🤸</span> Active Movement</button>
+                    <button class="btn" onclick="executeAction('sitting')"><span>🪑</span> Sitting Side Bed</button>
+                    <button class="btn" onclick="executeAction('walk50')"><span>🚶</span> Walk 50 Meters</button>
+                    <button class="btn" onclick="executeAction('stairs')"><span>🧗</span> Walk Up Stairs</button>
+                    <button class="btn btn-danger" onclick="executeAction('strengthening')"><span>🏋️</span> Strengthen 8kg</button>
                 </div>
 
-                <!-- Muscle List -->
-                <div class="bg-white rounded-3xl shadow-lg p-6 border border-slate-100 flex-grow">
-                    <h2 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-                        <svg class="w-6 h-6 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                        รายชื่อกล้ามเนื้อ
-                    </h2>
-                    <p class="text-sm text-slate-500 mb-4">นำเมาส์ไปชี้หรือแตะที่รายชื่อเพื่อไฮไลท์กล้ามเนื้อบนภาพ</p>
-                    
-                    <ul id="muscleList" class="space-y-2 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-                        <!-- Muscle items will be generated here -->
-                    </ul>
-                </div>
+                <button class="btn-next" id="btn-next" onclick="nextDay()" disabled>End Day & Proceed</button>
 
+                <div class="log-panel" id="log-panel">
+                    <!-- Logs go here -->
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Game Over / Win Modal -->
+    <div class="overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon" id="modal-icon">🏆</div>
+            <h2 id="modal-title">Success!</h2>
+            <p id="modal-desc">Patient reached 5 METs safely and is ready for discharge.</p>
+            <button class="btn-restart" onclick="initGame()">Play Again</button>
+        </div>
+    </div>
+
     <script>
-        // --- 1. CONFIGURATION & DATA ---
-        
-        const canvas = document.getElementById('anatomyCanvas');
-        const ctx = canvas.getContext('2d');
-        const neckSlider = document.getElementById('neckSlider');
-        const headSlider = document.getElementById('headSlider');
-        const jawSlider = document.getElementById('jawSlider');
-        const neckValueDisplay = document.getElementById('neckValue');
-        const headValueDisplay = document.getElementById('headValue');
-        const jawValueDisplay = document.getElementById('jawValue');
-        const tensionAlert = document.getElementById('tensionAlert');
-
-        const OFFSET_NECK = 7;
-        const OFFSET_HEAD = -20;
-
-        let neckAngle = 0;  
-        let headAngle = 0;  
-        let jawAngle = 0;   
-        let hoveredMuscle = null;
-
-        const COLORS = {
-            boneBorder: '#B45309',
-            neckBorder: '#94A3B8'
+        // Game State Variables
+        let state = {
+            day: 1,
+            actionsLeft: 3,
+            mets: 1.0,
+            o2: 98,
+            pain: 0,
+            rpe: 0,
+            hasPhlegm: false,
+            gameOver: false
         };
 
-        const muscles = [
-            { id: 'paraspinal', name: '1. Paraspinal Muscle', color: '#EF4444', desc: 'ยึดท้ายทอย-กระดูกสันหลัง ช่วยเงยศีรษะ' },
-            { id: 'trapezius', name: '2. Trapezius Muscle', color: '#F97316', desc: 'กล้ามเนื้อบ่า ช่วยพยุงและดึงรั้งศีรษะไปด้านหลัง' },
-            { id: 'temporalis', name: '3. Temporalis', color: '#3B82F6', desc: 'เกาะขมับ-ขากรรไกรล่าง ทำหน้าที่หุบปาก' },
-            { id: 'pterygoid', name: '4. Pterygoid', color: '#8B5CF6', desc: 'ด้านในขากรรไกร ช่วยในการเคี้ยวและขยับกราม' },
-            { id: 'masseter', name: '5. Masseter Muscle', color: '#10B981', desc: 'กล้ามเนื้อแก้มหลักที่ใช้ในการกัดและหุบปาก' },
-            { id: 'digastric', name: '6. Digastric Muscle', color: '#14B8A6', desc: 'มี 2 ส่วน เกาะกระดูกไฮออยด์ ช่วยอ้าปาก' },
-            { id: 'scm', name: '7. SCM (Sternocleidomastoid)', color: '#EC4899', desc: 'กล้ามเนื้อคอด้านข้าง ช่วยก้มและหมุนศีรษะ' },
-            { id: 'infrahyoid', name: '8. Infrahyoid Muscles', color: '#06B6D4', desc: 'ดึงกระดูกไฮออยด์ลง ช่วยเปิดทางเดินหายใจ/กลืน' }
-        ];
+        // DOM Elements
+        const ui = {
+            day: document.getElementById('day-display'),
+            actions: document.getElementById('actions-display'),
+            avatar: document.getElementById('avatar'),
+            metsVal: document.getElementById('mets-val'),
+            metsBar: document.getElementById('mets-bar'),
+            o2Val: document.getElementById('o2-val'),
+            o2Bar: document.getElementById('o2-bar'),
+            painVal: document.getElementById('pain-val'),
+            painBar: document.getElementById('pain-bar'),
+            rpeVal: document.getElementById('rpe-val'),
+            rpeBar: document.getElementById('rpe-bar'),
+            logPanel: document.getElementById('log-panel'),
+            btnNext: document.getElementById('btn-next'),
+            actionButtons: document.querySelectorAll('.action-grid .btn'),
+            modalOverlay: document.getElementById('modal-overlay'),
+            modalIcon: document.getElementById('modal-icon'),
+            modalTitle: document.getElementById('modal-title'),
+            modalDesc: document.getElementById('modal-desc')
+        };
 
-        // Global Fixed Points
-        const P_NECK_ORIGINAL = { x: 300, y: 350 }; 
-        const P_SPINE_BASE = { x: 320, y: 550 };
-        const P_STERNUM = { x: 200, y: 550 };
-        const P_HYOID_ORIGINAL = { x: 250, y: 410 }; 
-
-        // Local Points relative to Head Pivot (ปรับตำแหน่งให้ตรงกับกายวิภาคกะโหลกใหม่)
-        const L_TMJ = { x: -20, y: -40 };       
-        const L_OCCIPITAL = { x: 55, y: -55 };  // ดึงท้ายทอยกลับเข้ามาไม่ให้ยื่นเป็นแท่ง
-        const L_SKULL_BASE = { x: 30, y: -20 }; 
-        const L_MASTOID = { x: 10, y: -15 };    
-        const L_TEMPORAL = { x: -20, y: -110 }; 
-        const L_ZYGOMATIC = { x: -50, y: -45 }; 
-        const L_SPHENOID = { x: -35, y: -50 };  
-
-        // Local Points relative to Jaw Pivot
-        const L_CORONOID = { x: -20, y: 5 };   
-        const L_ANGLE = { x: 10, y: 60 };       
-        const L_CHIN = { x: -70, y: 60 };       
-
-        // --- 2. MATH & KINEMATICS ---
-
-        function degToRad(deg) { return deg * Math.PI / 180; }
-
-        function getGlobalPoint(localPt, pivotGlobal, angleRad) {
-            const cosA = Math.cos(angleRad);
-            const sinA = Math.sin(angleRad);
-            return {
-                x: pivotGlobal.x + (localPt.x * cosA - localPt.y * sinA),
-                y: pivotGlobal.y + (localPt.x * sinA + localPt.y * cosA)
-            };
+        // Initialize Game
+        function initGame() {
+            state = { day: 1, actionsLeft: 3, mets: 1.0, o2: 98, pain: 0, rpe: 0, hasPhlegm: false, gameOver: false };
+            ui.logPanel.innerHTML = '';
+            ui.modalOverlay.classList.remove('active');
+            log("Game Started: Post-Op Day 1", "success");
+            triggerDailyEvent();
+            updateUI();
         }
 
-        // --- 3. UI SETUP ---
-
-        function checkHeadTension() {
-            const THRESHOLD = -15; 
-            if (headAngle <= THRESHOLD) { 
-                tensionAlert.classList.remove('hidden');
-                const activeAngle = Math.abs(headAngle) - Math.abs(THRESHOLD); 
-                const maxForcedOpening = 25; 
-                const range = Math.abs(-30 - THRESHOLD); 
-                const forcedOpening = activeAngle * (maxForcedOpening / range);
-                
-                if (parseFloat(jawSlider.value) < forcedOpening) {
-                    jawSlider.value = forcedOpening;
-                    jawAngle = forcedOpening;
-                    jawValueDisplay.innerText = `${Math.round(jawAngle)}°`;
+        // Logic for specific treatments
+        const treatments = {
+            breathing: () => {
+                state.o2 = Math.min(98, state.o2 + 2);
+                log("Performed Diaphragmatic Breathing Exercise. O2 improved slightly.", "success");
+            },
+            coughing: () => {
+                if (state.hasPhlegm) {
+                    state.hasPhlegm = false;
+                    state.o2 = Math.min(98, state.o2 + 4);
+                    log("Coughing w/ support: Cleared phlegm! O2 increased.", "success");
+                } else {
+                    state.o2 = Math.min(98, state.o2 + 1);
+                    log("Coughing w/ support: No phlegm present. O2 stable.");
                 }
+            },
+            autogenic: () => {
+                if (state.hasPhlegm) {
+                    state.hasPhlegm = false;
+                    state.o2 = Math.min(98, state.o2 + 4);
+                    log("Autogenic Drainage: Cleared deep phlegm! O2 increased.", "success");
+                } else {
+                    state.o2 = Math.min(98, state.o2 + 1);
+                    log("Autogenic Drainage: Airway clear. O2 stable.");
+                }
+            },
+            plb: () => {
+                let reduced = Math.min(state.rpe, 3);
+                state.rpe = Math.max(0, state.rpe - 3);
+                log(`Pursed Lip Breathing: Reduced RPE by ${reduced}.`, "success");
+            },
+            activeMovement: () => {
+                state.mets = Math.min(5.0, state.mets + 0.3);
+                log("Active Movement Exercise: Mild METs progress.");
+            },
+            sitting: () => {
+                state.mets = Math.min(5.0, state.mets + 0.4);
+                log("Sitting Side Bed: Patient tolerated well. METs increased.");
+            },
+            walk50: () => {
+                // Rule: Walking 50m on Day 1-2 drops O2 and adds 7 RPE
+                if (state.day <= 2) {
+                    state.o2 = Math.max(80, state.o2 - 5);
+                    state.rpe = Math.min(10, state.rpe + 7);
+                    log("Walked 50 meters too early (Day 1-2)! O2 dropped and RPE severely increased (+7).", "danger");
+                } else {
+                    state.mets = Math.min(5.0, state.mets + 0.8);
+                    let msg = "Walked 50 meters: Good METs progress.";
+                    if (Math.random() < 0.4) {
+                        state.rpe = Math.min(10, state.rpe + 2);
+                        msg += " Induced some RPE.";
+                        log(msg, "warning");
+                    } else {
+                        log(msg, "success");
+                    }
+                }
+            },
+            stairs: () => {
+                // Rule: Walking up stairs must be done Day 5-6. Else drops O2 and adds 7 RPE.
+                if (state.day <= 4) {
+                    state.o2 = Math.max(80, state.o2 - 5);
+                    state.rpe = Math.min(10, state.rpe + 7);
+                    log(`Walked up stairs too early (Day ${state.day})! O2 dropped and RPE severely increased (+7).`, "danger");
+                } else {
+                    state.mets = Math.min(5.0, state.mets + 1.2);
+                    let msg = "Walked up stairs: Major METs progress!";
+                    if (Math.random() < 0.6) {
+                        state.rpe = Math.min(10, state.rpe + 3);
+                        msg += " Induced significant RPE.";
+                        log(msg, "warning");
+                    } else {
+                        log(msg, "success");
+                    }
+                }
+            },
+            strengthening: () => {
+                state.pain = 10;
+                state.o2 -= 5;
+                log("CRITICAL ERROR: 8kg Strengthening caused severe sternal pain! O2 dropped.", "danger");
+            }
+        };
+
+        function executeAction(actionKey) {
+            if (state.actionsLeft <= 0 || state.gameOver) return;
+
+            treatments[actionKey]();
+            state.actionsLeft--;
+            
+            updateUI();
+            checkWinLoss();
+        }
+
+        function triggerDailyEvent() {
+            const rand = Math.random();
+            if (rand < 0.33) {
+                state.hasPhlegm = true;
+                state.o2 = 92;
+                log(`⚠️ Morning Assessment: Phlegm Retention detected. O2 dropped to 92%.`, "warning");
+            } else if (rand < 0.66) {
+                state.o2 = 94;
+                log(`⚠️ Morning Assessment: Shallow breathing. O2 dropped to 94%.`, "warning");
             } else {
-                tensionAlert.classList.add('hidden');
+                state.rpe = Math.min(10, state.rpe + 3);
+                log(`⚠️ Morning Assessment: Poor sleep. Sudden RPE increased (+3).`, "warning");
             }
         }
 
-        function initUI() {
-            const listEl = document.getElementById('muscleList');
-            muscles.forEach(m => {
-                const li = document.createElement('li');
-                li.className = `p-3 rounded-2xl border border-slate-100 cursor-pointer transition-all duration-300 hover:bg-slate-50 hover:border-indigo-200 hover:shadow-md transform hover:-translate-y-1`;
-                li.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <div class="w-4 h-4 rounded-full flex-shrink-0 shadow-inner" style="background-color: ${m.color}; border: 1px solid rgba(0,0,0,0.1)"></div>
-                        <div>
-                            <div class="font-bold text-slate-800 leading-tight">${m.name}</div>
-                            <div class="text-xs text-slate-500 mt-1">${m.desc}</div>
-                        </div>
-                    </div>
-                `;
-                li.addEventListener('mouseenter', () => { hoveredMuscle = m.id; render(); });
-                li.addEventListener('mouseleave', () => { hoveredMuscle = null; render(); });
-                li.addEventListener('touchstart', (e) => { e.preventDefault(); hoveredMuscle = m.id; render(); });
-                li.addEventListener('touchend', (e) => { e.preventDefault(); hoveredMuscle = null; render(); });
-                listEl.appendChild(li);
-            });
+        function nextDay() {
+            if (state.gameOver) return;
+            
+            state.day++;
+            
+            // Check day limit constraint BEFORE applying new day logic
+            if (state.day > 6 && state.mets < 5.0) {
+                endGame(false, "Time limit reached! Failed to achieve 5 METs by Day 6.");
+                return;
+            }
 
-            neckSlider.addEventListener('input', (e) => {
-                neckAngle = parseFloat(e.target.value);
-                neckValueDisplay.innerText = `${neckAngle}°`;
-
-                let targetHeadAngle = -neckAngle; 
-                if (targetHeadAngle < -30) targetHeadAngle = -30; 
-                headSlider.value = targetHeadAngle;
-                headAngle = targetHeadAngle;
-                headValueDisplay.innerText = `${headAngle > 0 ? '+' : ''}${headAngle}°`;
-
-                checkHeadTension(); 
-                render();
-            });
-
-            headSlider.addEventListener('input', (e) => {
-                headAngle = parseFloat(e.target.value);
-                headValueDisplay.innerText = `${headAngle > 0 ? '+' : ''}${headAngle}°`;
-                checkHeadTension();
-                render();
-            });
-
-            jawSlider.addEventListener('input', (e) => {
-                jawAngle = parseFloat(e.target.value);
-                jawValueDisplay.innerText = `${jawAngle}°`;
-                render();
-            });
+            state.actionsLeft = 3;
+            state.pain = Math.max(0, state.pain - 1);
+            
+            ui.logPanel.innerHTML = '';
+            log(`--- Post-Op Day ${state.day} Begins ---`, "success");
+            log(`Pain naturally decreased by 1.`);
+            
+            triggerDailyEvent();
+            updateUI();
+            checkWinLoss();
         }
 
-        // --- 4. 3D RENDERING ENGINE ---
-
-        function drawRoundedPath3D(ctx, points, radius, fillGradient, strokeColor, lineWidth = 2, useShadow = false) {
-            if (points.length < 3) return;
-            
-            ctx.beginPath();
-            const p0 = points[0];
-            const pLast = points[points.length - 1];
-            
-            ctx.moveTo((p0.x + pLast.x) / 2, (p0.y + pLast.y) / 2);
-            
-            for (let i = 0; i < points.length; i++) {
-                const pCurr = points[i];
-                const pNext = points[(i + 1) % points.length];
-                ctx.arcTo(pCurr.x, pCurr.y, pNext.x, pNext.y, radius);
-            }
-            ctx.closePath();
-            
-            if (useShadow) {
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.35)';
-                ctx.shadowBlur = 15;
-                ctx.shadowOffsetX = 6;
-                ctx.shadowOffsetY = 8;
-            }
-            
-            if (fillGradient) {
-                ctx.fillStyle = fillGradient;
-                ctx.fill();
-            }
-            
-            ctx.shadowColor = 'transparent'; 
-            
-            if (strokeColor) {
-                ctx.lineWidth = lineWidth;
-                ctx.strokeStyle = strokeColor;
-                ctx.stroke();
-                
-                ctx.lineWidth = lineWidth * 0.5;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.stroke();
+        function checkWinLoss() {
+            if (state.pain >= 10) {
+                endGame(false, "Patient pain reached maximum (10/10). Rehab suspended!");
+            } else if (state.rpe >= 10) {
+                endGame(false, "Patient collapsed from exertion (RPE 10/10).");
+            } else if (state.mets >= 5.0) {
+                endGame(true, "Patient successfully reached 5 METs and is ready for discharge!");
             }
         }
 
-        function drawMuscleLine3D(ptsArray, color, isActive) {
-            const THRESHOLD = -15;
-            const isTensionActive = (headAngle <= THRESHOLD) && (isActive === 'trapezius' || isActive === 'pterygoid');
-            const isHighlighted = (hoveredMuscle === isActive) || isTensionActive;
-            const isFaded = hoveredMuscle !== null && hoveredMuscle !== isActive && !isTensionActive;
-
-            const baseWidth = isHighlighted ? (isTensionActive ? 16 : 14) : 9;
-
-            ctx.globalAlpha = isFaded ? 0.15 : (isHighlighted ? 1.0 : 0.85);
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-
-            ctx.beginPath();
-            ctx.moveTo(ptsArray[0].x, ptsArray[0].y);
-            for (let i = 1; i < ptsArray.length; i++) ctx.lineTo(ptsArray[i].x, ptsArray[i].y);
-            
-            if (!isFaded) {
-                ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-                ctx.shadowBlur = 8;
-                ctx.shadowOffsetX = 3;
-                ctx.shadowOffsetY = 5;
-            }
-            ctx.lineWidth = baseWidth;
-            ctx.strokeStyle = color;
-            ctx.stroke();
-            ctx.shadowColor = 'transparent';
-
-            if (!isFaded && !isTensionActive) {
-                ctx.beginPath();
-                ctx.moveTo(ptsArray[0].x, ptsArray[0].y);
-                for (let i = 1; i < ptsArray.length; i++) ctx.lineTo(ptsArray[i].x, ptsArray[i].y);
-                ctx.lineWidth = baseWidth * 0.35;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-                ctx.stroke();
-            }
-            
-            if (isTensionActive) {
-                ctx.beginPath();
-                ctx.moveTo(ptsArray[0].x, ptsArray[0].y);
-                for (let i = 1; i < ptsArray.length; i++) ctx.lineTo(ptsArray[i].x, ptsArray[i].y);
-                ctx.lineWidth = 4;
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.setLineDash([6, 6]);
-                ctx.stroke();
-                ctx.setLineDash([]); 
-            }
-            ctx.globalAlpha = 1.0; 
+        function endGame(isWin, message) {
+            state.gameOver = true;
+            ui.modalIcon.innerText = isWin ? "🏆" : "🚨";
+            ui.modalTitle.innerText = isWin ? "Success!" : "Therapy Failed";
+            ui.modalTitle.style.color = isWin ? "var(--success)" : "var(--danger)";
+            ui.modalDesc.innerText = message;
+            ui.modalOverlay.classList.add('active');
+            updateUI();
         }
 
-        function drawForceArrow(ctx, startPt, endPt, color) {
-            const headlen = 14; 
-            const dx = endPt.x - startPt.x;
-            const dy = endPt.y - startPt.y;
-            const angle = Math.atan2(dy, dx);
+        function updateUI() {
+            // Update Text
+            ui.day.innerText = `Day ${state.day}`;
+            ui.actions.innerText = `Actions Left: ${state.actionsLeft}`;
+            ui.metsVal.innerText = `${state.mets.toFixed(1)} / 5.0`;
+            ui.o2Val.innerText = `${state.o2}%`;
+            ui.painVal.innerText = `${state.pain} / 10`;
+            ui.rpeVal.innerText = `${state.rpe} / 10`;
+
+            // Update Bars (Width & Color Logic)
+            ui.metsBar.style.width = `${(state.mets / 5.0) * 100}%`;
             
-            ctx.save();
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
+            // O2 range mapped from 90 to 100 for visual effect
+            let o2Width = Math.max(0, (state.o2 - 90) * 10);
+            ui.o2Bar.style.width = `${o2Width}%`;
+            ui.o2Bar.style.background = state.o2 <= 94 ? "var(--danger)" : "var(--primary)";
 
-            ctx.shadowColor = 'rgba(0,0,0,0.4)';
-            ctx.shadowBlur = 6;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 3;
+            ui.painBar.style.width = `${(state.pain / 10) * 100}%`;
+            ui.rpeBar.style.width = `${(state.rpe / 10) * 100}%`;
 
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 7;
-            ctx.beginPath();
-            ctx.moveTo(startPt.x, startPt.y);
-            ctx.lineTo(endPt.x, endPt.y);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(endPt.x, endPt.y);
-            ctx.lineTo(endPt.x - headlen * Math.cos(angle - Math.PI / 6), endPt.y - headlen * Math.sin(angle - Math.PI / 6));
-            ctx.lineTo(endPt.x - headlen * Math.cos(angle + Math.PI / 6), endPt.y - headlen * Math.sin(angle + Math.PI / 6));
-            ctx.closePath();
-            ctx.stroke();
-
-            ctx.shadowColor = 'transparent';
-
-            ctx.strokeStyle = color;
-            ctx.fillStyle = color;
-            ctx.lineWidth = 3;
-            
-            ctx.beginPath();
-            ctx.moveTo(startPt.x, startPt.y);
-            ctx.lineTo(endPt.x, endPt.y);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(endPt.x, endPt.y);
-            ctx.lineTo(endPt.x - headlen * Math.cos(angle - Math.PI / 6), endPt.y - headlen * Math.sin(angle - Math.PI / 6));
-            ctx.lineTo(endPt.x - headlen * Math.cos(angle + Math.PI / 6), endPt.y - headlen * Math.sin(angle + Math.PI / 6));
-            ctx.closePath();
-            ctx.fill();
-            
-            ctx.restore();
-        }
-
-        function drawImpactSymbol(ctx, x, y, radius, color) {
-            ctx.save();
-            ctx.translate(x, y);
-            ctx.beginPath();
-            const spikes = 8; 
-            const innerRadius = radius * 0.4;
-            
-            for (let i = 0; i < spikes * 2; i++) {
-                const r = (i % 2 === 0) ? radius : innerRadius;
-                const angle = (i * Math.PI) / spikes;
-                if (i === 0) ctx.moveTo(r * Math.cos(angle), r * Math.sin(angle));
-                else ctx.lineTo(r * Math.cos(angle), r * Math.sin(angle));
-            }
-            ctx.closePath();
-            
-            ctx.shadowColor = color;
-            ctx.shadowBlur = 15;
-            
-            ctx.fillStyle = color;
-            ctx.fill();
-            
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.stroke();
-            
-            ctx.restore();
-        }
-
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. วาด Grid พื้นหลัง
-            ctx.strokeStyle = '#F1F5F9'; 
-            ctx.lineWidth = 1;
-            for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
-            for(let i=0; i<canvas.height; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(canvas.width,i); ctx.stroke(); }
-
-            // 2. คำนวณ Kinematics ตำแหน่งทั้งหมด
-            const neckRad = degToRad(-(neckAngle + OFFSET_NECK)); 
-            const neckDx = P_NECK_ORIGINAL.x - P_SPINE_BASE.x;
-            const neckDy = P_NECK_ORIGINAL.y - P_SPINE_BASE.y;
-            
-            const currentP_NECK = {
-                x: P_SPINE_BASE.x + (neckDx * Math.cos(neckRad) - neckDy * Math.sin(neckRad)),
-                y: P_SPINE_BASE.y + (neckDx * Math.sin(neckRad) + neckDy * Math.cos(neckRad))
-            };
-
-            const hyoidDx = P_HYOID_ORIGINAL.x - P_NECK_ORIGINAL.x;
-            const hyoidDy = P_HYOID_ORIGINAL.y - P_NECK_ORIGINAL.y;
-            const currentP_HYOID = {
-                x: currentP_NECK.x + (hyoidDx * Math.cos(neckRad) - hyoidDy * Math.sin(neckRad)),
-                y: currentP_NECK.y + (hyoidDx * Math.sin(neckRad) + hyoidDy * Math.cos(neckRad))
-            };
-
-            const absoluteHeadRad = neckRad + degToRad(-(headAngle + OFFSET_HEAD));
-            let totalJawRad = absoluteHeadRad - degToRad(jawAngle);
-
-            let currentL_TMJ = { ...L_TMJ };
-            let jawWideningFactor = 0;
-
-            if (jawAngle > 15) { 
-                const translationFactor = (jawAngle - 15) / (25 - 15);
-                currentL_TMJ.x -= 20 * translationFactor; 
-                currentL_TMJ.y += 5 * translationFactor;  
-                jawWideningFactor = 10 * translationFactor;
+            // Avatar Logic
+            if (state.pain >= 10 || state.rpe >= 10) {
+                ui.avatar.innerText = "😵"; // Max pain/RPE
+            } else if (state.hasPhlegm) {
+                ui.avatar.innerText = "🤧"; // Phlegm (Runny/Blowing nose)
+            } else if (state.pain >= 7 || state.o2 <= 92) {
+                ui.avatar.innerText = "😫"; // High pain / Very low O2
+            } else if (state.rpe >= 7) {
+                ui.avatar.innerText = "😩"; // High RPE
+            } else if (state.pain >= 4 || state.rpe >= 4 || state.o2 <= 94) {
+                ui.avatar.innerText = "😐"; // Moderate symptoms
+            } else {
+                ui.avatar.innerText = "😃"; // Good condition
             }
 
-            const g_tmj = getGlobalPoint(currentL_TMJ, currentP_NECK, absoluteHeadRad);
-            const g_occipital = getGlobalPoint(L_OCCIPITAL, currentP_NECK, absoluteHeadRad);
-            const g_skull_base = getGlobalPoint(L_SKULL_BASE, currentP_NECK, absoluteHeadRad);
-            const g_mastoid = getGlobalPoint(L_MASTOID, currentP_NECK, absoluteHeadRad);
-            const g_temporal = getGlobalPoint(L_TEMPORAL, currentP_NECK, absoluteHeadRad);
-            const g_zygomatic = getGlobalPoint(L_ZYGOMATIC, currentP_NECK, absoluteHeadRad);
-            const g_sphenoid = getGlobalPoint(L_SPHENOID, currentP_NECK, absoluteHeadRad);
-
-            const g_coronoid = getGlobalPoint(L_CORONOID, g_tmj, totalJawRad);
-            const L_ANGLE_WIDE = { x: L_ANGLE.x + jawWideningFactor, y: L_ANGLE.y };
-            const g_angle = getGlobalPoint(L_ANGLE_WIDE, g_tmj, totalJawRad);
+            // Button States
+            const noActions = state.actionsLeft <= 0;
+            ui.actionButtons.forEach(btn => btn.disabled = noActions || state.gameOver);
             
-            const L_CHIN_WIDE = { x: L_CHIN.x + jawWideningFactor * 0.5, y: L_CHIN.y };
-            const g_chin = getGlobalPoint(L_CHIN_WIDE, g_tmj, totalJawRad);
-
-            // ================= 3D DRAWING =================
-
-            const spineGrad = ctx.createLinearGradient(-15, -15, 15, 15);
-            spineGrad.addColorStop(0, '#FFFFFF'); 
-            spineGrad.addColorStop(0.4, '#E2E8F0'); 
-            spineGrad.addColorStop(1, '#94A3B8'); 
-
-            const boneGrad = ctx.createLinearGradient(-30, -80, 50, 50);
-            boneGrad.addColorStop(0, '#FFFFFF');
-            boneGrad.addColorStop(0.3, '#FEF3C7');
-            boneGrad.addColorStop(1, '#D97706');
-
-            // 1. พื้นหลังทรวงอก
-            const thoracicPoints = [
-                {x: P_STERNUM.x - 15, y: P_STERNUM.y + 50},
-                {x: P_STERNUM.x + 15, y: P_STERNUM.y - 10},
-                {x: P_SPINE_BASE.x - 10, y: P_SPINE_BASE.y - 30},
-                {x: P_SPINE_BASE.x + 20, y: P_SPINE_BASE.y + 50}
-            ];
-            drawRoundedPath3D(ctx, thoracicPoints, 12, '#F8FAFC', COLORS.neckBorder, 2, false); 
-
-            // 2. กระดูกคอ 7 ข้อ
-            const numVertebrae = 7;
-            const dx = P_SPINE_BASE.x - currentP_NECK.x;
-            const dy = P_SPINE_BASE.y - currentP_NECK.y;
-            const spineLength = Math.sqrt(dx*dx + dy*dy);
-            const blockHeight = (spineLength / numVertebrae) * 0.75; 
-            const gap = (spineLength / numVertebrae) * 0.25;         
-            const spineAngle = Math.atan2(dy, dx);
-            const blockWidth = 35; 
-
-            for (let i = 0; i < numVertebrae; i++) {
-                const dist = i * (blockHeight + gap) + blockHeight/2;
-                const cx = currentP_NECK.x + Math.cos(spineAngle) * dist;
-                const cy = currentP_NECK.y + Math.sin(spineAngle) * dist;
-
-                ctx.save();
-                ctx.translate(cx, cy);
-                ctx.rotate(spineAngle - Math.PI/2);
-                const blockPoints = [
-                    {x: -blockWidth/2, y: -blockHeight/2},
-                    {x: blockWidth/2, y: -blockHeight/2},
-                    {x: blockWidth/2, y: blockHeight/2},
-                    {x: -blockWidth/2, y: blockHeight/2}
-                ];
-                drawRoundedPath3D(ctx, blockPoints, 6, spineGrad, COLORS.neckBorder, 2, true);
-                ctx.restore();
-            }
-
-            // 3. กระดูกหน้าอก Sternum
-            ctx.save();
-            ctx.translate(P_STERNUM.x, P_STERNUM.y + 20); 
-            const sternumPoints = [{x: -12, y: -30}, {x: 12, y: -30}, {x: 12, y: 50}, {x: -12, y: 50}];
-            drawRoundedPath3D(ctx, sternumPoints, 8, spineGrad, COLORS.neckBorder, 2, true);
-            ctx.restore();
-
-            // 4. กล้ามเนื้อชั้นลึก (Pterygoid)
-            drawMuscleLine3D([g_sphenoid, g_angle], muscles.find(m=>m.id==='pterygoid').color, 'pterygoid');
-
-            // 5. กรามล่าง Jaw Bone (ปรับปรุงทรงกายวิภาค)
-            ctx.save();
-            ctx.translate(g_tmj.x, g_tmj.y);
-            ctx.rotate(totalJawRad);
-            const jawShape = [
-                {x: 0, y: 0},                 // Condyle (TMJ)
-                {x: -5, y: 10},               // Condylar neck
-                {x: -12, y: 15},              // Mandibular notch
-                {x: -20, y: 5},               // Coronoid process
-                {x: -30, y: 25},              // Ramus anterior
-                {x: -60, y: 20},              // Alveolar process (Lower teeth)
-                {x: L_CHIN_WIDE.x, y: L_CHIN_WIDE.y}, // Chin
-                {x: -30 + jawWideningFactor * 0.8, y: 65}, // Inferior border
-                {x: L_ANGLE_WIDE.x, y: L_ANGLE_WIDE.y}, // Angle
-                {x: 5, y: 35},                // Ramus posterior
-            ];
-            drawRoundedPath3D(ctx, jawShape, 6, boneGrad, COLORS.boneBorder, 2, true); 
-            
-            // วาดเส้นซี่ฟันล่าง (Lower Teeth details)
-            ctx.strokeStyle = 'rgba(180, 83, 9, 0.4)';
-            ctx.lineWidth = 1.5;
-            for (let i = 0; i < 4; i++) {
-                ctx.beginPath();
-                ctx.moveTo(-58 + i * 5, 20);
-                ctx.lineTo(-56 + i * 5, 28);
-                ctx.stroke();
-            }
-            ctx.restore();
-
-            // 6. กะโหลกศีรษะ Skull Bone (ปรับปรุงทรงกายวิภาคหน้าด้านข้าง)
-            ctx.save();
-            ctx.translate(currentP_NECK.x, currentP_NECK.y);
-            ctx.rotate(absoluteHeadRad);
-            const skullShape = [
-                {x: 0, y: 0},                 // C1 pivot
-                {x: 30, y: -20},              // Occipital base
-                {x: 55, y: -55},              // Occipital curve (ปรับให้โค้งมน ไม่ยื่นออก)
-                {x: 50, y: -110},             // Parietal curve back
-                {x: 25, y: -145},             // Parietal top
-                {x: -15, y: -160},            // Vertex
-                {x: -60, y: -135},            // Forehead curve
-                {x: -85, y: -90},             // Brow ridge / Glabella
-                {x: -80, y: -75},             // Eye socket dip / Nasion
-                {x: -100, y: -55},            // Nasal tip
-                {x: -85, y: -35},             // Subnasal / Maxilla
-                {x: -80, y: -20},             // Upper teeth
-                {x: -45, y: -30},             // Zygomatic arch base
-                {x: -20, y: -40},             // TMJ socket
-                {x: 10, y: -15},              // Mastoid process
-            ];
-            drawRoundedPath3D(ctx, skullShape, 10, boneGrad, COLORS.boneBorder, 2, true); 
-            
-            // เพิ่มรายละเอียดเบ้าตา (Orbit)
-            ctx.beginPath();
-            ctx.ellipse(-65, -80, 10, 14, Math.PI / 6, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0,0,0,0.1)';
-            ctx.fill();
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = 'rgba(180, 83, 9, 0.3)';
-            ctx.stroke();
-
-            // เพิ่มรายละเอียดร่องโหนกแก้ม (Zygomatic hollow)
-            ctx.beginPath();
-            ctx.ellipse(-38, -50, 12, 5, -Math.PI / 8, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0,0,0,0.08)';
-            ctx.fill();
-
-            // วาดเส้นซี่ฟันบน (Upper Teeth details)
-            ctx.strokeStyle = 'rgba(180, 83, 9, 0.4)';
-            ctx.lineWidth = 1.5;
-            for (let i = 0; i < 4; i++) {
-                ctx.beginPath();
-                ctx.moveTo(-78 + i * 5, -20);
-                ctx.lineTo(-76 + i * 5, -28);
-                ctx.stroke();
-            }
-            ctx.restore();
-
-            // 7. กระดูก Hyoid Bone 
-            ctx.save();
-            ctx.translate(currentP_HYOID.x, currentP_HYOID.y);
-            const hyoidGrad = ctx.createRadialGradient(-2, -2, 1, 0, 0, 8);
-            hyoidGrad.addColorStop(0, '#FFFFFF');
-            hyoidGrad.addColorStop(0.5, '#FEF3C7');
-            hyoidGrad.addColorStop(1, '#B45309');
-            
-            ctx.beginPath();
-            ctx.arc(0, 0, 7, 0, Math.PI * 2);
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-            ctx.shadowBlur = 8;
-            ctx.shadowOffsetX = 3;
-            ctx.shadowOffsetY = 4;
-            ctx.fillStyle = hyoidGrad;
-            ctx.fill();
-            ctx.shadowColor = 'transparent'; 
-            ctx.lineWidth = 1.5;
-            ctx.strokeStyle = COLORS.boneBorder;
-            ctx.stroke();
-            ctx.restore();
-
-            // 8. กล้ามเนื้อชั้นนอก
-            drawMuscleLine3D([g_occipital, P_SPINE_BASE], muscles.find(m=>m.id==='paraspinal').color, 'paraspinal');
-            drawMuscleLine3D([g_skull_base, P_SPINE_BASE], muscles.find(m=>m.id==='trapezius').color, 'trapezius');
-            drawMuscleLine3D([g_temporal, g_coronoid], muscles.find(m=>m.id==='temporalis').color, 'temporalis');
-            drawMuscleLine3D([g_zygomatic, g_angle], muscles.find(m=>m.id==='masseter').color, 'masseter');
-            drawMuscleLine3D([g_mastoid, currentP_HYOID, g_chin], muscles.find(m=>m.id==='digastric').color, 'digastric');
-            drawMuscleLine3D([g_mastoid, P_STERNUM], muscles.find(m=>m.id==='scm').color, 'scm');
-            drawMuscleLine3D([currentP_HYOID, P_STERNUM], muscles.find(m=>m.id==='infrahyoid').color, 'infrahyoid');
-
-            // 9. Force Arrows & TMJ Impact
-            if (headAngle <= -15 && headAngle >= -30) {
-                const lerp = (p1, p2, t) => ({ x: p1.x + (p2.x - p1.x) * t, y: p1.y + (p2.y - p1.y) * t });
-                
-                // Masseter 
-                const masseterStart = lerp(g_angle, g_zygomatic, 0.2);
-                const masseterEnd = lerp(g_angle, g_zygomatic, 0.8);
-                drawForceArrow(ctx, masseterStart, masseterEnd, '#EF4444'); 
-
-                // Digastric 
-                const digastricStart = lerp(g_chin, currentP_HYOID, 0.2);
-                const digastricEnd = lerp(g_chin, currentP_HYOID, 0.8);
-                drawForceArrow(ctx, digastricStart, digastricEnd, '#EF4444'); 
-
-                // TMJ Impact
-                drawImpactSymbol(ctx, g_tmj.x, g_tmj.y, 12, '#F59E0B'); 
+            ui.btnNext.disabled = !noActions || state.gameOver;
+            if (noActions && !state.gameOver) {
+                ui.btnNext.classList.add('pulse');
+            } else {
+                ui.btnNext.classList.remove('pulse');
             }
         }
 
-        // --- 5. START UP ---
-        initUI();
-        checkHeadTension(); 
-        render(); 
+        function log(msg, type = "normal") {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            entry.innerText = `[${time}] ${msg}`;
+            ui.logPanel.prepend(entry);
+        }
 
+        // Start initial game
+        window.onload = initGame;
     </script>
 </body>
 </html>
