@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post-Op Cardiac Rehab Simulation</title>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: #ffffff;
+            --text-dark: #334155;
+            --text-light: #64748b;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --border: #e2e8f0;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: var(--panel-bg);
+            width: 100%;
+            max-width: 1000px;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Status Panel */
+        .status-panel {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .avatar-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .avatar {
+            font-size: 5rem;
+            line-height: 1;
+            transition: all 0.3s ease;
+        }
+
+        .day-indicator {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .actions-left {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--warning);
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .stat-row {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .stat-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.4s ease, background-color 0.4s ease;
+        }
+
+        /* Action Panel */
+        .interaction-area {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+
+        .btn-danger {
+            border-color: #fca5a5;
+            color: var(--danger);
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #fef2f2;
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .btn-next {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            background: var(--primary-hover);
+        }
+        
+        .btn-next.pulse {
+            animation: pulse 1.5s infinite;
+            background: var(--success);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        /* Log Panel */
+        .log-panel {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: var(--radius);
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .log-entry {
+            border-bottom: 1px solid #334155;
+            padding-bottom: 5px;
+        }
+
+        .log-entry.warning { color: #fcd34d; }
+        .log-entry.danger { color: #fca5a5; }
+        .log-entry.success { color: #6ee7b7; }
+
+        /* Modal Overlay */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: var(--panel-bg);
+            padding: 40px;
+            border-radius: var(--radius);
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            color: var(--text-light);
+            margin-bottom: 25px;
+        }
+
+        .modal-icon {
+            font-size: 4rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-restart {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .action-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <header class="header">
+            <h1>❤️ Post-Op Cardiac Rehab</h1>
+            <p>Target: Reach 5 METs by Day 6. Manage O2, Pain, and RPE.</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Status Panel -->
+            <div class="status-panel">
+                <div class="day-indicator" id="day-display">Day 1</div>
+                <div class="actions-left" id="actions-display">Actions Left: 3</div>
+                
+                <div class="avatar-container">
+                    <div class="avatar" id="avatar">😃</div>
+                </div>
+
+                <!-- METs -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>METs (Fitness)</span>
+                        <span id="mets-val">1.0 / 5.0</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="mets-bar" style="width: 20%; background: var(--success);"></div>
+                    </div>
+                </div>
+
+                <!-- O2 Saturation -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>O2 Saturation</span>
+                        <span id="o2-val">98%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="o2-bar" style="width: 100%; background: var(--primary);"></div>
+                    </div>
+                </div>
+
+                <!-- Pain -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>Pain Scale</span>
+                        <span id="pain-val">0 / 10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="pain-bar" style="width: 0%; background: var(--danger);"></div>
+                    </div>
+                </div>
+
+                <!-- RPE -->
+                <div class="stat-row">
+                    <div class="stat-labels">
+                        <span>RPE Scale</span>
+                        <span id="rpe-val">0 / 10</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="rpe-bar" style="width: 0%; background: var(--warning);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Panel & Logs -->
+            <div class="interaction-area">
+                <div class="action-grid" id="action-grid">
+                    <button class="btn" onclick="executeAction('breathing')"><span>🫁</span> Diaphragmatic Breathing Exercise</button>
+                    <button class="btn" onclick="executeAction('coughing')"><span>🫂</span> Cough w/ Support</button>
+                    <button class="btn" onclick="executeAction('autogenic')"><span>🌬️</span> Autogenic Drainage</button>
+                    <button class="btn" onclick="executeAction('plb')"><span>😮‍💨</span> Pursed Lip Breathing</button>
+                    <button class="btn" onclick="executeAction('activeMovement')"><span>🤸</span> Active Movement</button>
+                    <button class="btn" onclick="executeAction('sitting')"><span>🪑</span> Sitting Side Bed</button>
+                    <button class="btn" onclick="executeAction('walk50')"><span>🚶</span> Walk 50 Meters</button>
+                    <button class="btn" onclick="executeAction('stairs')"><span>🧗</span> Walk Up Stairs</button>
+                    <button class="btn btn-danger" onclick="executeAction('strengthening')"><span>🏋️</span> Strengthen 8kg</button>
+                </div>
+
+                <button class="btn-next" id="btn-next" onclick="nextDay()" disabled>End Day & Proceed</button>
+
+                <div class="log-panel" id="log-panel">
+                    <!-- Logs go here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over / Win Modal -->
+    <div class="overlay" id="modal-overlay">
+        <div class="modal">
+            <div class="modal-icon" id="modal-icon">🏆</div>
+            <h2 id="modal-title">Success!</h2>
+            <p id="modal-desc">Patient reached 5 METs safely and is ready for discharge.</p>
+            <button class="btn-restart" onclick="initGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Game State Variables
+        let state = {
+            day: 1,
+            actionsLeft: 3,
+            mets: 1.0,
+            o2: 98,
+            pain: 0,
+            rpe: 0,
+            hasPhlegm: false,
+            gameOver: false
+        };
+
+        // DOM Elements
+        const ui = {
+            day: document.getElementById('day-display'),
+            actions: document.getElementById('actions-display'),
+            avatar: document.getElementById('avatar'),
+            metsVal: document.getElementById('mets-val'),
+            metsBar: document.getElementById('mets-bar'),
+            o2Val: document.getElementById('o2-val'),
+            o2Bar: document.getElementById('o2-bar'),
+            painVal: document.getElementById('pain-val'),
+            painBar: document.getElementById('pain-bar'),
+            rpeVal: document.getElementById('rpe-val'),
+            rpeBar: document.getElementById('rpe-bar'),
+            logPanel: document.getElementById('log-panel'),
+            btnNext: document.getElementById('btn-next'),
+            actionButtons: document.querySelectorAll('.action-grid .btn'),
+            modalOverlay: document.getElementById('modal-overlay'),
+            modalIcon: document.getElementById('modal-icon'),
+            modalTitle: document.getElementById('modal-title'),
+            modalDesc: document.getElementById('modal-desc')
+        };
+
+        // Initialize Game
+        function initGame() {
+            state = { day: 1, actionsLeft: 3, mets: 1.0, o2: 98, pain: 0, rpe: 0, hasPhlegm: false, gameOver: false };
+            ui.logPanel.innerHTML = '';
+            ui.modalOverlay.classList.remove('active');
+            log("Game Started: Post-Op Day 1", "success");
+            triggerDailyEvent();
+            updateUI();
+        }
+
+        // Logic for specific treatments
+        const treatments = {
+            breathing: () => {
+                state.o2 = Math.min(98, state.o2 + 2);
+                log("Performed Diaphragmatic Breathing Exercise. O2 improved slightly.", "success");
+            },
+            coughing: () => {
+                if (state.hasPhlegm) {
+                    state.hasPhlegm = false;
+                    state.o2 = Math.min(98, state.o2 + 4);
+                    log("Coughing w/ support: Cleared phlegm! O2 increased.", "success");
+                } else {
+                    state.o2 = Math.min(98, state.o2 + 1);
+                    log("Coughing w/ support: No phlegm present. O2 stable.");
+                }
+            },
+            autogenic: () => {
+                if (state.hasPhlegm) {
+                    state.hasPhlegm = false;
+                    state.o2 = Math.min(98, state.o2 + 4);
+                    log("Autogenic Drainage: Cleared deep phlegm! O2 increased.", "success");
+                } else {
+                    state.o2 = Math.min(98, state.o2 + 1);
+                    log("Autogenic Drainage: Airway clear. O2 stable.");
+                }
+            },
+            plb: () => {
+                let reduced = Math.min(state.rpe, 3);
+                state.rpe = Math.max(0, state.rpe - 3);
+                log(`Pursed Lip Breathing: Reduced RPE by ${reduced}.`, "success");
+            },
+            activeMovement: () => {
+                state.mets = Math.min(5.0, state.mets + 0.3);
+                log("Active Movement Exercise: Mild METs progress.");
+            },
+            sitting: () => {
+                state.mets = Math.min(5.0, state.mets + 0.4);
+                log("Sitting Side Bed: Patient tolerated well. METs increased.");
+            },
+            walk50: () => {
+                // Rule: Walking 50m on Day 1-2 drops O2 and adds 7 RPE
+                if (state.day <= 2) {
+                    state.o2 = Math.max(80, state.o2 - 5);
+                    state.rpe = Math.min(10, state.rpe + 7);
+                    log("Walked 50 meters too early (Day 1-2)! O2 dropped and RPE severely increased (+7).", "danger");
+                } else {
+                    state.mets = Math.min(5.0, state.mets + 0.8);
+                    let msg = "Walked 50 meters: Good METs progress.";
+                    if (Math.random() < 0.4) {
+                        state.rpe = Math.min(10, state.rpe + 2);
+                        msg += " Induced some RPE.";
+                        log(msg, "warning");
+                    } else {
+                        log(msg, "success");
+                    }
+                }
+            },
+            stairs: () => {
+                // Rule: Walking up stairs must be done Day 5-6. Else drops O2 and adds 7 RPE.
+                if (state.day <= 4) {
+                    state.o2 = Math.max(80, state.o2 - 5);
+                    state.rpe = Math.min(10, state.rpe + 7);
+                    log(`Walked up stairs too early (Day ${state.day})! O2 dropped and RPE severely increased (+7).`, "danger");
+                } else {
+                    state.mets = Math.min(5.0, state.mets + 1.2);
+                    let msg = "Walked up stairs: Major METs progress!";
+                    if (Math.random() < 0.6) {
+                        state.rpe = Math.min(10, state.rpe + 3);
+                        msg += " Induced significant RPE.";
+                        log(msg, "warning");
+                    } else {
+                        log(msg, "success");
+                    }
+                }
+            },
+            strengthening: () => {
+                state.pain = 10;
+                state.o2 -= 5;
+                log("CRITICAL ERROR: 8kg Strengthening caused severe sternal pain! O2 dropped.", "danger");
+            }
+        };
+
+        function executeAction(actionKey) {
+            if (state.actionsLeft <= 0 || state.gameOver) return;
+
+            treatments[actionKey]();
+            state.actionsLeft--;
+            
+            updateUI();
+            checkWinLoss();
+        }
+
+        function triggerDailyEvent() {
+            const rand = Math.random();
+            if (rand < 0.33) {
+                state.hasPhlegm = true;
+                state.o2 = 92;
+                log(`⚠️ Morning Assessment: Phlegm Retention detected. O2 dropped to 92%.`, "warning");
+            } else if (rand < 0.66) {
+                state.o2 = 94;
+                log(`⚠️ Morning Assessment: Shallow breathing. O2 dropped to 94%.`, "warning");
+            } else {
+                state.rpe = Math.min(10, state.rpe + 3);
+                log(`⚠️ Morning Assessment: Poor sleep. Sudden RPE increased (+3).`, "warning");
+            }
+        }
+
+        function nextDay() {
+            if (state.gameOver) return;
+            
+            state.day++;
+            
+            // Check day limit constraint BEFORE applying new day logic
+            if (state.day > 6 && state.mets < 5.0) {
+                endGame(false, "Time limit reached! Failed to achieve 5 METs by Day 6.");
+                return;
+            }
+
+            state.actionsLeft = 3;
+            state.pain = Math.max(0, state.pain - 1);
+            
+            ui.logPanel.innerHTML = '';
+            log(`--- Post-Op Day ${state.day} Begins ---`, "success");
+            log(`Pain naturally decreased by 1.`);
+            
+            triggerDailyEvent();
+            updateUI();
+            checkWinLoss();
+        }
+
+        function checkWinLoss() {
+            if (state.pain >= 10) {
+                endGame(false, "Patient pain reached maximum (10/10). Rehab suspended!");
+            } else if (state.rpe >= 10) {
+                endGame(false, "Patient collapsed from exertion (RPE 10/10).");
+            } else if (state.mets >= 5.0) {
+                endGame(true, "Patient successfully reached 5 METs and is ready for discharge!");
+            }
+        }
+
+        function endGame(isWin, message) {
+            state.gameOver = true;
+            ui.modalIcon.innerText = isWin ? "🏆" : "🚨";
+            ui.modalTitle.innerText = isWin ? "Success!" : "Therapy Failed";
+            ui.modalTitle.style.color = isWin ? "var(--success)" : "var(--danger)";
+            ui.modalDesc.innerText = message;
+            ui.modalOverlay.classList.add('active');
+            updateUI();
+        }
+
+        function updateUI() {
+            // Update Text
+            ui.day.innerText = `Day ${state.day}`;
+            ui.actions.innerText = `Actions Left: ${state.actionsLeft}`;
+            ui.metsVal.innerText = `${state.mets.toFixed(1)} / 5.0`;
+            ui.o2Val.innerText = `${state.o2}%`;
+            ui.painVal.innerText = `${state.pain} / 10`;
+            ui.rpeVal.innerText = `${state.rpe} / 10`;
+
+            // Update Bars (Width & Color Logic)
+            ui.metsBar.style.width = `${(state.mets / 5.0) * 100}%`;
+            
+            // O2 range mapped from 90 to 100 for visual effect
+            let o2Width = Math.max(0, (state.o2 - 90) * 10);
+            ui.o2Bar.style.width = `${o2Width}%`;
+            ui.o2Bar.style.background = state.o2 <= 94 ? "var(--danger)" : "var(--primary)";
+
+            ui.painBar.style.width = `${(state.pain / 10) * 100}%`;
+            ui.rpeBar.style.width = `${(state.rpe / 10) * 100}%`;
+
+            // Avatar Logic
+            if (state.pain >= 10 || state.rpe >= 10) {
+                ui.avatar.innerText = "😵"; // Max pain/RPE
+            } else if (state.hasPhlegm) {
+                ui.avatar.innerText = "🤧"; // Phlegm (Runny/Blowing nose)
+            } else if (state.pain >= 7 || state.o2 <= 92) {
+                ui.avatar.innerText = "😫"; // High pain / Very low O2
+            } else if (state.rpe >= 7) {
+                ui.avatar.innerText = "😩"; // High RPE
+            } else if (state.pain >= 4 || state.rpe >= 4 || state.o2 <= 94) {
+                ui.avatar.innerText = "😐"; // Moderate symptoms
+            } else {
+                ui.avatar.innerText = "😃"; // Good condition
+            }
+
+            // Button States
+            const noActions = state.actionsLeft <= 0;
+            ui.actionButtons.forEach(btn => btn.disabled = noActions || state.gameOver);
+            
+            ui.btnNext.disabled = !noActions || state.gameOver;
+            if (noActions && !state.gameOver) {
+                ui.btnNext.classList.add('pulse');
+            } else {
+                ui.btnNext.classList.remove('pulse');
+            }
+        }
+
+        function log(msg, type = "normal") {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            entry.innerText = `[${time}] ${msg}`;
+            ui.logPanel.prepend(entry);
+        }
+
+        // Start initial game
+        window.onload = initGame;
+    </script>
+</body>
+</html>
